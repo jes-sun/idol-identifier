@@ -15,4 +15,5 @@ This was coded and tested using Anaconda with Python 3 in Windows 10.
   * [face_recognition](https://pypi.org/project/face-recognition/) - Python facial recognition library
     * [dlib](http://dlib.net/) - Deep learning library used by face_recognition
   * [NumPy](https://pypi.org/project/numpy/) - Array computing library
+  * [filetype](https://pypi.org/project/filetype/) - Filetype checker
 
