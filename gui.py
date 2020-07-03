@@ -2,7 +2,8 @@ import tkinter as tk
 import tkinter.filedialog
 import tkinter.messagebox
 import tkinter.simpledialog
-from PIL import ImageTk, Image, UnidentifiedImageError
+import tkinter.colorchooser
+from PIL import ImageTk, Image, ImageColor, UnidentifiedImageError
 import encode_faces
 import cv2
 import global_vars
@@ -80,9 +81,6 @@ def ask_file_video():
     except TypeError:
         tk.messagebox.showerror("Invalid video file", "The selected file is not a valid video file.", parent=root)
         return
-    except Exception as e:
-        print("!!!")
-        print(e)
     return
 
 
@@ -137,6 +135,95 @@ def show_help_dataset():
     parent=root)
     return
 
+# Settings menu
+def show_settings():
+    global tolerance_temp
+    global interval_temp
+    global color_temp
+    global rects_temp
+
+    global color_select
+    global rects_select
+    global settings
+    settings = tk.Toplevel()
+    settings.title("Settings")
+    
+    tolerance_frame = tk.LabelFrame(settings, text="Tolerance")
+    tolerance_temp = tk.DoubleVar(value=global_vars.tolerance)
+    tolerance_frame.grid(column=0, row=0, padx=15, pady=6, columnspan=2)
+    tolerance_desc = tk.Label(tolerance_frame, text="Tolerance level for the facial recognition.\nA lower number is more strict when determining whether or not a face matches someone in the dataset.", justify="left", padx=15,pady=15)
+    tolerance_desc.grid()
+    tolerance_select = tk.Spinbox(tolerance_frame, from_=0, to=1, increment=0.05, textvariable=tolerance_temp)
+    tolerance_select.grid(padx=6, pady=15)
+
+    interval_frame = tk.LabelFrame(settings, text="Tracking Interval")
+    interval_temp = tk.IntVar(value=global_vars.skip_frames)
+    interval_frame.grid(column=0, row=1,padx=15, pady=6, columnspan=2)
+    interval_desc = tk.Label(interval_frame, text="Interval of frames at which to conduct facial recognition during videos.\nA lower number will result in smoother and more frequent tracking, but processing will take longer.", justify="left", padx=15, pady=15)
+    interval_desc.grid()
+    interval_select = tk.Spinbox(interval_frame, from_=0, to=30, increment=1, textvariable=interval_temp)
+    interval_select.grid(padx=6, pady=15)
+
+    color_frame = tk.LabelFrame(settings, text="Label Colour")
+    color_temp = global_vars.label_color.hex
+    color_frame.grid(column=0, row=2, padx=15, pady=6)
+    color_desc = tk.Label(color_frame, text="Colour of identification labels on output.", justify="left", padx=15, pady=15)
+    color_desc.grid()
+    color_select = tk.Button(color_frame, text="Choose new label colour", command=settings_color, bg=color_temp)
+    color_select.grid(padx=6, pady=15)
+
+    rects_frame = tk.LabelFrame(settings, text="Rectangles")
+    rects_temp = tk.IntVar(value=int(global_vars.draw_rects))
+    rects_frame.grid(column=1, row=2, padx=15, pady=6)
+    rects_desc = tk.Label(rects_frame, text="Enable or disable the drawing of rectangles around faces.", justify="left", padx=15, pady=15)
+    rects_desc.grid()
+    rects_select = tk.Checkbutton(rects_frame, text="Rectangles", variable=rects_temp, bg=color_temp, relief="raised")
+    rects_select.grid(padx=6, pady=15)
+
+    button_frame = tk.Frame(settings)
+    button_frame.grid(column=0, row=4, pady=15, columnspan=2)
+    button_save = tk.Button(button_frame, text="Save changes", command=settings_save)
+    button_save.grid(column=0, row=0, padx=5, pady=5)
+    button_cancel = tk.Button(button_frame, text="Cancel", command=settings.destroy)
+    button_cancel.grid(column=1,row=0, padx=5, pady=5)
+    button_defaults = tk.Button(button_frame, text="Reset to defaults", command=settings_default)
+    button_defaults.grid(column=0, row=1, columnspan=2)
+
+def settings_save():
+    global tolerance_temp
+    global interval_temp
+    global color_temp
+    global rects_temp
+    global settings
+    global_vars.tolerance = tolerance_temp.get()
+    global_vars.skip_frames = interval_temp.get()
+    global_vars.label_color.set_hex(color_temp)
+    global_vars.draw_rects = rects_temp == 1
+
+    global_vars.current_info.set("[INFO] settings saved.")
+    settings.destroy()
+    return
+
+def settings_default():
+    global_vars.tolerance = global_vars.tolerance_default
+    global_vars.skip_frames = global_vars.skip_frames_default
+    global_vars.label_color = global_vars.label_color_default
+    global_vars.draw_rects = True
+
+    global_vars.current_info.set("[INFO] settings returned to default.")
+    settings.destroy()
+    return
+
+def settings_color():
+    global color_temp
+    global color_select
+    global rects_select
+    color_hex = tk.colorchooser.askcolor(title="Choose new label colour", parent=settings)[1]
+    color_temp = color_hex
+    color_select.configure(bg=color_hex)
+    rects_select.configure(bg=color_hex)
+    return
+
 # Frames
 def build_gui(root):
     global current_dataset
@@ -180,6 +267,8 @@ def build_menu(root):
     identify_menu.add_command(label="Identify from image", command=ask_file_image)
     identify_menu.add_command(label="Identify from video", command=ask_file_video)
     menubar.add_cascade(label="Identify", menu=identify_menu)
+
+    menubar.add_command(label="Settings", command=show_settings)
 
     root.config(menu=menubar)
 
