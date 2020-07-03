@@ -7,12 +7,12 @@ import encode_faces
 import cv2
 import global_vars
 import tracker
-import concurrent.futures
+import filetype
 
 
 # Identify menu commands
-
 def ask_file_image():
+    global output
     try:
         if not current_dataset.get():
             tk.messagebox.showwarning("No dataset selected", "A face encodings dataset needs to be chosen before identifying faces in an image.", parent=root)
@@ -26,19 +26,65 @@ def ask_file_image():
         else:
             output_file = "output_image.jpg"
 
-        tracker.face_tracker_image(current_dataset.get(), path, output_file, output_frame)
+        status = tracker.face_tracker_image(current_dataset.get(), path, output_file)
+       
+        if status == -1:
+            raise UnidentifiedImageError
 
         output_image = global_vars.current_frame.get()
+        global_vars.current_info.set("[INFO] image saved as {}".format(output_file))
 
         output.configure(image=output_image)
         output.image = output_image
-        output.pack(side="top", fill="both", expand="yes")
+        #output.pack(side="top", fill="both", expand="yes")
     except UnidentifiedImageError:
         tk.messagebox.showerror("Invalid image file", "The selected file is not a valid image file.", parent=root)
         return
     except AttributeError:
         pass
     return
+
+def ask_file_video():
+    try:
+        if not current_dataset.get():
+            tk.messagebox.showwarning("No dataset selected", "A face encodings dataset needs to be chosen before identifying faces in a video.", parent=root)
+            return
+
+        path = tk.filedialog.askopenfilename()
+        if not path:
+            return
+        check = filetype.is_video(path)
+        if check == False:
+            print(check)
+            raise TypeError
+
+        name = tk.simpledialog.askstring("Image", "Name of output video (do not include file extension)", parent=root)
+        if name:
+            output_file = name + ".avi"
+        else:
+            output_file = "output_video.avi"
+
+        tk.messagebox.showinfo("Video Processing", "Preview of video will be shown in a new window while it is processing. Once the preview is finished, the completed video will be saved to disk.")
+
+        output.configure(image=None, text="Preview shown in new window")
+        global_vars.current_info.set("[INFO] video processing...")
+
+        status = tracker.face_tracker_video(current_dataset.get(), path, output_file)
+
+        if status == -1:
+            raise Exception
+
+        tk.messagebox.showinfo("Procesing complete", "Facial recognition for the video has been completed. Output saved as {}.".format(output_file))
+
+        global_vars.current_info.set("[INFO] video saved as {}".format(output_file))
+    except TypeError:
+        tk.messagebox.showerror("Invalid video file", "The selected file is not a valid video file.", parent=root)
+        return
+    except Exception as e:
+        print("!!!")
+        print(e)
+    return
+
 
 # Dataset menu commands
 def ask_file_encode():
@@ -48,16 +94,17 @@ def ask_file_encode():
             return
         name = tk.simpledialog.askstring("Dataset", "Name of dataset", parent=root)
         if name:
-            output = name + "_encodings.pickle"
+            encodings_output = name + "_encodings.pickle"
         else:
             output = "encodings.pickle"
 
 
         loading = tk.messagebox.showinfo("Encoding...", "Dataset will now be encoded.", parent=root)
-        status = encode_faces.encode_faces(dataset, output)
-  
+        
+        encode_faces.encode_faces(dataset, encodings_output)
+        
         if status == 1:
-            complete = tk.messagebox.showinfo("Encoding", "Encoding successful. Saved as {}.".format(output), parent=root)
+            complete = tk.messagebox.showinfo("Encoding", "Encoding successful. Saved as {}.".format(encodings_output), parent=root)
         else:
             complete = tk.messagebox.showerror("Encoding", "Encoding unsuccessful.", parent=root)
     except AttributeError:
@@ -71,10 +118,11 @@ def ask_file_dataset():
         if not new_dataset:
             return
         elif not new_dataset.endswith(".pickle"):
-            tk.messagebox.showwarning("Invalid encodings file","This file is not a useable encodings file.", parent=root)
+            tk.messagebox.showwarning("Invalid encodings file","The selected file is not a useable encodings file.", parent=root)
             return
         else:
             current_dataset.set(new_dataset)
+            global_vars.current_info.set("[INFO] dataset selected.")
     except AttributeError:
         pass
     return
@@ -88,42 +136,38 @@ def show_help_dataset():
     """,
     parent=root)
     return
-    
-# Window activities
-root = tk.Tk()
 
 # Frames
-main_frame = tk.Frame(root)
-main_frame.pack()
+def build_gui(root):
+    global current_dataset
+    global output
+    main_frame = tk.Frame(root)
+    main_frame.pack()
 
-output_frame = tk.LabelFrame(main_frame, width=1000, height=600)
-output_frame.pack()
+    output_frame = tk.LabelFrame(main_frame, width=1000, height=600)
+    output_frame.pack()
 
-output = tk.Label(output_frame, padx=500, pady=300)
-output.pack()
+    output = tk.Label(output_frame, padx=500, pady=300)
+    output.pack()
 
-dataset_frame = tk.LabelFrame(main_frame)
-dataset_frame.pack(side="left")
-current_dataset = tk.StringVar()
-dataset_text = tk.Label(dataset_frame, text="Current dataset: ")
-dataset_text.pack(side="left")
-show_current_dataset = tk.Label(dataset_frame, textvariable=current_dataset)
-show_current_dataset.pack(side="left")
+    dataset_frame = tk.LabelFrame(main_frame)
+    dataset_frame.pack(side="left")
+    current_dataset = tk.StringVar()
+    dataset_text = tk.Label(dataset_frame, text="Current dataset: ")
+    dataset_text.pack(side="left")
+    show_current_dataset = tk.Label(dataset_frame, textvariable=current_dataset)
+    show_current_dataset.pack(side="left")
 
-info_frame = tk.LabelFrame(main_frame)
-current_info = tk.StringVar()
-show_current_info = tk.Label(info_frame, textvariable=current_info)
-show_current_info.pack(side="right")
-info_frame.pack(side="right")
+    info_frame = tk.LabelFrame(main_frame)
+    global_vars.current_info = tk.StringVar()
+    show_current_info = tk.Label(info_frame, textvariable=global_vars.current_info)
+    show_current_info.pack(side="right")
+    info_frame.pack(side="right")
+    return
 
 # Menu bar
 def build_menu(root):
     menubar = tk.Menu(root)
-
-    identify_menu = tk.Menu(menubar, tearoff=0)
-    identify_menu.add_command(label="Identify from image", command=ask_file_image)
-    identify_menu.add_command(label="Identify from video")
-    menubar.add_cascade(label="Identify", menu=identify_menu)
 
     dataset_menu = tk.Menu(menubar, tearoff=0)
     dataset_menu.add_command(label="Choose face dataset file", command=ask_file_dataset)
@@ -132,15 +176,22 @@ def build_menu(root):
     dataset_menu.add_command(label="Help", command=show_help_dataset)
     menubar.add_cascade(label="Dataset", menu=dataset_menu)
 
+    identify_menu = tk.Menu(menubar, tearoff=0)
+    identify_menu.add_command(label="Identify from image", command=ask_file_image)
+    identify_menu.add_command(label="Identify from video", command=ask_file_video)
+    menubar.add_cascade(label="Identify", menu=identify_menu)
+
     root.config(menu=menubar)
 
     return
-
+    
+# Window activities
+root = tk.Tk()
+current_dataset = tk.StringVar()
+build_gui(root)
 build_menu(root)
 root.title("Idol Identifier")
 
-
-root.after(1, current_info.get)
 root.mainloop()
 
 

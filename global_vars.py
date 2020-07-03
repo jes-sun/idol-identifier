@@ -17,6 +17,6 @@ class Frame():
         self.image = image
         return
 
-       
+   
 current_frame = Frame()
-
+current_info = None    

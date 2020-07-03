@@ -4,7 +4,7 @@ import argparse
 import pickle
 import cv2
 import numpy as np
-import gui
+import global_vars
 
 # Tolerance for the facial detection
 # Lower = more strict, Higher = more lax
@@ -23,10 +23,10 @@ def load_encodings(encodings_input):
 		data if successful, -1 if unsuccessful
 	"""
 	try:
-		gui.current_info.set("[INFO] loading encodings...")
+		print("[INFO] loading encodings...")
 		data = pickle.loads(open(encodings_input, "rb").read())
 	except:
-		gui.current_info.set("[INFO] could not load encodings.")
+		print("[INFO] could not load encodings.")
 		return -1
 	return data
 
@@ -45,11 +45,11 @@ def load_image(image_input):
 	
 	# Load the input image, convert from BGR to RGB
 	try:
-		gui.current_info.set("[INFO] opening image...")
+		print("[INFO] opening image...")
 		image = cv2.imread(image_input)
 		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 	except:
-		gui.current_info.set("[INFO] could not open image.")
+		print("[INFO] could not open image.")
 		return -1
 	return (image, rgb)
 
@@ -71,7 +71,7 @@ def identify(data, image, rgb):
 	detection_method = "hog"
 
 	# Locate the faces in the image, embed them
-	gui.current_info.set("[INFO] recognizing faces...")
+	print("[INFO] recognizing faces...")
 	boxes = face_recognition.face_locations(rgb, model=detection_method)
 	encodings = face_recognition.face_encodings(rgb, boxes)
 
