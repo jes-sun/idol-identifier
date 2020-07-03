@@ -6,10 +6,6 @@ import cv2
 import numpy as np
 import global_vars
 
-# Tolerance for the facial detection
-# Lower = more strict, Higher = more lax
-# Default 0.45
-tolerance = 0.45
 
 
 def load_encodings(encodings_input):
@@ -106,7 +102,7 @@ def match_face(data, encoding):
 		-1 if unsuccessful
 	"""
 	# Attempt to match each face in the input image to the known faces
-	matches = face_recognition.compare_faces(data["encodings"], encoding, tolerance)
+	matches = face_recognition.compare_faces(data["encodings"], encoding, global_vars.tolerance)
 	name = "?"
 
 	# Check to see if there is a match

@@ -10,15 +10,6 @@ import identifier
 import encode_faces
 import global_vars
 
-# Number of frames to skip in between facial detections
-# Higher = faster performance, less accurate
-# Lower = slower performance, more accurate
-# Default 15
-skip_frames = 15
-
-# BGR value of the labels drawn to frame
-label_color = (157,20,255)
-
 def face_tracker_video(encodings_input, input_file, output_file):
 	"""
 	Processes facial recognition frame-by-frame for a video file.
@@ -48,18 +39,18 @@ def face_tracker_video(encodings_input, input_file, output_file):
 
 	# Initialize writer
 	writer = cv2.VideoWriter(output_file, fourcc, fps, (w,h))
-	
-	W = None
-	H = None
 
 	# Load encodings
 	dataset = identifier.load_encodings(encodings_input)
 
 	# Frame count
 	frame_count = 0
+	
+	# Check if video is too large
+	large = False
+	if w > 1000 or h > 600:
+		large = True
 
-	W = None
-	H = None
 
 	rois = []
 
@@ -73,25 +64,31 @@ def face_tracker_video(encodings_input, input_file, output_file):
 			break
 
 		# Convert frame for processing
-		framep = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+		if large:
+			framep = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+		else: 
+			framep = frame
 		rgb = cv2.cvtColor(framep, cv2.COLOR_BGR2RGB)
 
-		if W is None or H is None:
-			(H,W) = framep.shape[:2]
-
-		if frame_count % skip_frames == 0:
+		if frame_count % global_vars.skip_frames == 0:
 			# Identify faces in frame
 			rois = identifier.identify(dataset, framep, rgb)
 		for roi in rois:
-			top = roi[0][0] * 2
-			right = roi[0][1] * 2
-			bottom = roi[0][2] * 2
-			left = roi[0][3] * 2
-
+			if large:
+				top = roi[0][0] * 2
+				right = roi[0][1] * 2
+				bottom = roi[0][2] * 2
+				left = roi[0][3] * 2
+			else:
+				top = roi[0][0]
+				right = roi[0][1]
+				bottom = roi[0][2]
+				left = roi[0][3]
 			name = roi[1]
-			cv2.rectangle(frame, (left, top), (right, bottom), label_color, 2) 
+			if global_vars.draw_rects is True:
+				cv2.rectangle(frame, (left, top), (right, bottom), global_vars.label_color.bgr, 2) 
 			y = top - 15 if top - 15 > 15 else top + 15			
-			cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, label_color, 2)
+			cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, global_vars.label_color.bgr, 2)
 
 
 		# Write to output
@@ -142,23 +139,38 @@ def face_tracker_image(encodings_input, input_file, output_file):
 	# Load encodings
 	dataset = identifier.load_encodings(encodings_input)
 
+	# Check if image is too large
+	w,h = cv2.GetSize(frame)
+	large = false
+	if w > 1000 or h > 600:
+		large = True
+
 	# Convert frame for processing
-	framep = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+	if large:
+		framep = cv2.resize(frame, (0, 0), fx=0.5, fy=0.5)
+	else:
+		framep = frame
 	rgb = cv2.cvtColor(framep, cv2.COLOR_BGR2RGB)
 
 	# Identify faces in frame
 	rois = []
 	rois = identifier.identify(dataset, framep, rgb)
 	for roi in rois:
-		top = roi[0][0] * 2
-		right = roi[0][1] * 2
-		bottom = roi[0][2] * 2
-		left = roi[0][3] * 2
-
+		if large:
+			top = roi[0][0] * 2
+			right = roi[0][1] * 2
+			bottom = roi[0][2] * 2
+			left = roi[0][3] * 2
+		else:
+			top = roi[0][0]
+			right = roi[0][1]
+			bottom = roi[0][2]
+			left = roi[0][3]
 		name = roi[1]
-		cv2.rectangle(frame, (left, top), (right, bottom), label_color, 2) 
+		if global_vars.draw_rects is True:
+			cv2.rectangle(frame, (left, top), (right, bottom), global_vars.label_color.bgr, 2) 
 		y = top - 15 if top - 15 > 15 else top + 15			
-		cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, label_color, 2)
+		cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, global_vars.label_color.bgr, 2)
 	
 	print("[INFO] faces recognized.")
 	cv2.imwrite(output_file, frame)
