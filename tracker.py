@@ -8,16 +8,7 @@ import dlib
 import cv2
 import identifier
 import encode_faces
-import gui
 import global_vars
-
-input_vid = "testitems\\flinch.mp4"
-output_vid = "output.avi"
-
-input_img = "testitems\\blackpink.jpg"
-output_img = "output.jpg"
-
-encodings_input = "encodings.pickle"
 
 # Number of frames to skip in between facial detections
 # Higher = faster performance, less accurate
@@ -28,12 +19,12 @@ skip_frames = 15
 # BGR value of the labels drawn to frame
 label_color = (157,20,255)
 
-
 def face_tracker_video(encodings_input, input_file, output_file):
 	"""
 	Processes facial recognition frame-by-frame for a video file.
 
 	Parameters:
+	encodings_input(str): the path to the encodings file
 	input_file(str): the path to the input video
 	output_file(str): the path to write output video
 
@@ -42,10 +33,10 @@ def face_tracker_video(encodings_input, input_file, output_file):
 	"""
 	# Open video file
 	try:
-		gui.current_info.set("[INFO] opening video file...")
+		print("[INFO] opening video file...")
 		input_vid = cv2.VideoCapture(input_file)
 	except:
-		gui.current_info.set("[INFO] could not open video file.")
+		print("[INFO] could not open video file.")
 		return -1
 
 	# Extract information from input video
@@ -108,8 +99,8 @@ def face_tracker_video(encodings_input, input_file, output_file):
 
 		# Show output
 		cv2.imshow("Preview of {} ...".format(input_file), frame)
-		#key = cv2.waitKey(int(1000/20)) & 0xFF
-		key = cv2.waitKey(int(1000/30)) & 0xFF
+		#key = cv2.waitKey(int(1000/30)) & 0xFF
+		key = cv2.waitKey(1) & 0xFF
 		if key == ord("q"):
 			break
 		
@@ -118,7 +109,7 @@ def face_tracker_video(encodings_input, input_file, output_file):
 		
 		# Increment total frames
 		frame_count += 1
-		gui.current_info.set("[INFO] Frame {} / {}".format(frame_count, total_frames))
+		print("[INFO] Frame {} / {}".format(frame_count, total_frames))
 
 	# Release things
 	writer.release()
@@ -129,11 +120,12 @@ def face_tracker_video(encodings_input, input_file, output_file):
 
 	return 1
 
-def face_tracker_image(encodings_input, input_file, output_file, output_frame):
+def face_tracker_image(encodings_input, input_file, output_file):
 	"""
 	Processes facial recognition for a single image.
 
 	Parameters:
+	encodings_input(str): the path to the encodings file
 	input_file(str): the path to the input image
 	output_file(str): the path to write output image
 
@@ -141,10 +133,10 @@ def face_tracker_image(encodings_input, input_file, output_file, output_frame):
 	1 if successful, -1 if unsuccessful
 	"""
 	try:
-		gui.current_info.set("[INFO] opening image file...")
+		print("[INFO] opening image file...")
 		frame = cv2.imread(input_file)
 	except:
-		gui.current_info.set("[INFO] could not open image file.")
+		print("[INFO] could not open image file.")
 		return -1
 
 	# Load encodings
@@ -168,7 +160,7 @@ def face_tracker_image(encodings_input, input_file, output_file, output_frame):
 		y = top - 15 if top - 15 > 15 else top + 15			
 		cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX, 0.75, label_color, 2)
 	
-	gui.current_info.set("[INFO] faces recognized.")
+	print("[INFO] faces recognized.")
 	cv2.imwrite(output_file, frame)
 	global_vars.current_frame.set(frame)
 	"""
@@ -182,9 +174,4 @@ def face_tracker_image(encodings_input, input_file, output_file, output_frame):
 	cv2.destroyAllWindows()
 
 	return 1
-
-#face_tracker_video(input_vid,output_vid)
-
-#face_tracker_image(input_img,output_img)
-
 
