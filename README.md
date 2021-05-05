@@ -8,7 +8,7 @@ Currently the functions all work, but the GUI is incomplete and needs to be full
 
 This was coded and tested using Anaconda with Python 3 in Windows 10.
 
-### Prerequisites
+### Dependencies
   * [OpenCV for Python](https://pypi.org/project/opencv-python/) - Image processing library
     * [imutils](https://pypi.org/project/imutils/) - Convenience funtions for OpenCV
   * [Pillow](https://pypi.org/project/Pillow/) - Another image processing library
