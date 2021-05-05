@@ -1,6 +1,6 @@
 # Idol Identifier (WIP)
 
-This program processes single images or videos frame-by-frame and uses a facial recognition library to compare the faces in the media to a given dataset. The faces will be identified (if able to be matched to a person in the dataset) or labeled as unknown.
+This program uses multithreading to process single images or videos frame-by-frame. A facial recognition library is used to compare the faces in the media to a given dataset. The faces will be identified (if able to be matched to a person in the dataset) or labeled as unknown.
 
 Currently the functions all work, but the GUI is incomplete and needs to be fully integrated with the coded features.
 
